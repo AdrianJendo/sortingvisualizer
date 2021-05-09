@@ -54,54 +54,8 @@ function mergeSortHelper(arr, start, end, animations, ascending=true) {
         animations.push([k, sorted_first_half[i]]);
         sorted[k++] = sorted_first_half[i++];
     }
-
     return sorted;
 }
-
-
-
-//quick sort helper functions:
-const swap = ( (arr, i, j) => {
-    if (i === j && i < arr.length) return;
-
-    const temp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = temp;
-});
-
-const quickSortHelper = ( (unsorted, start, end, ascending) => {
-    //start is (start index) of subsection and end is (end index + 1)
-    const size = end - start;
-	if (size > 1) {
-        const middle = Math.floor((start + end) / 2)
-		const pivot = unsorted[middle]; //select pivot
-		swap(unsorted, start, middle); //move pivot to front
-		let i = start + 1; //select low (ascending) / high (descending)
-		let j = end - 1; //select high (ascending) / low (descending)
-		while (true) { //cross eventually happens, so we don't ever have to change this boolean
-            while(i<=j && (ascending && unsorted[i]<=pivot || !ascending && unsorted[i] >= pivot)){ //increment i 
-                ++i;
-            }
-			if (i <= j) { // no cross
-                while(i<=j && (ascending && unsorted[j] > pivot || !ascending && unsorted[j] < pivot)){ //if no cross, decrement j
-                    --j;
-                }
-			}
-			if (i > j) { //a cross happened
-				swap(unsorted, start, j); //swap pivot with j
-				if (j != 0)
-                    quickSortHelper(unsorted, start, j, ascending); //recursive call to sort subcollections in 0(1) memory
-				if (j + 1 != size)
-                    quickSortHelper(unsorted, j + 1, end, ascending);
-				return; //exit the function to not loop infinitely
-			}
-			else { //swap high and low if no cross 
-				swap(unsorted, i, j);
-			}
-		}
-	}
-});
-
 
 
 /*
@@ -113,8 +67,61 @@ for ascending order (same algorithm for descending, but high and low are reverse
 -swap with high pointer after cross
 */
 //Quicksort function
-export function quickSort(unsorted, animatiosn = [], ascending = true) {
+export function quickSort(unsorted, animations = [], ascending = true) {
     const sorted = unsorted.slice();
-	quickSortHelper(sorted, 0, sorted.length, ascending);
+	quickSortHelper(sorted, 0, sorted.length, animations, ascending);
 	return sorted;
 }
+
+//quick sort helper functions:
+const swap = ( (arr, i, j, animations) => {
+    if (i === j && i < arr.length) return;
+
+    animations.push([i,j]); //push once to change colour
+    animations.push([i,j]); //push second time to revert colour
+    animations.push([i, arr[j], j, arr[i]]);
+
+    const temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+});
+
+const quickSortHelper = ( (unsorted, start, end, animations, ascending) => {
+    //start is (start index) of subsection and end is (end index + 1)
+    const size = end - start;
+	if (size > 1) {
+        const middle = Math.floor((start + end) / 2);
+		const pivot = unsorted[middle]; //select pivot
+		swap(unsorted, start, middle, animations); //move pivot to front
+        
+		let i = start + 1; //select low pointer (ascending) / high (descending)
+		let j = end-1; //select high pointer (ascending) / low (descending)
+		while (true) { //cross eventually happens, so we don't ever have to change this boolean
+            while(i<=j && ((ascending && unsorted[i]<=pivot) || (!ascending && unsorted[i] >= pivot))){ //increment i 
+                animations.push([i,i]);     //push once to change colour
+                animations.push([i,i]);     //push second time to revert colour
+                ++i;
+            }
+            while(i<=j && ((ascending && unsorted[j] >= pivot) || (!ascending && unsorted[j] <= pivot))){ //if no cross, decrement j
+                animations.push([j,j]);     //push once to change colour
+                animations.push([j,j]);     //push second time to revert colour
+                --j;
+            }
+			if (i > j) { //a cross happened
+				swap(unsorted, start, j, animations); //swap pivot with j
+                quickSortHelper(unsorted, start, j, animations, ascending); //recursive call to sort subcollections in 0(1) memory
+				quickSortHelper(unsorted, j + 1, end, animations, ascending);
+				return; //exit the function to not loop infinitely
+			}
+			else { //swap high and low if no cross 
+				swap(unsorted, i, j, animations);
+                i++;
+                j--;
+			}
+		}
+	}
+});
+
+
+
+//Insertion Sort

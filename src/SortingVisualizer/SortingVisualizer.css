@@ -7,10 +7,9 @@
   }
   
   .array-bar {
-    width: 2px;
+    width: 3px; /*1px;*/
     display: inline-block;
-    margin: 0 1px;
-    background-color: black;
+    /*margin: 0 1px;*/
   }
 
   .button-container {
