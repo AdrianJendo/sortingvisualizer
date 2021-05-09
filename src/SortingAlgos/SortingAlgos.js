@@ -1,7 +1,11 @@
 //Returns sorted array using merge sort O(nlogn) time and O(n) space
 //Merge Sort function with parameters for array and boolean to determine ascending or descending order 
 //Animations list is a list of triplets [(index, index), (index, index), (index, value)] for indicies that were compared and value that was used to overwrite the index
-export function mergeSort(arr, start, end, animations = [], ascending=true) {
+export function mergeSort(arr, animations=[], ascending=true){
+    return mergeSortHelper(arr.slice(), 0, arr.length-1, animations, ascending);
+}
+
+function mergeSortHelper(arr, start, end, animations, ascending=true) {
     let middle = Math.floor((start+end)/2); //split the array in half
     
     //Start and end indicies of the two half-arrays
@@ -14,10 +18,10 @@ export function mergeSort(arr, start, end, animations = [], ascending=true) {
     let sorted_first_half = arr.slice()
     let sorted_second_half = arr.slice();
     if(first_half_end - first_half_start > 0){
-        sorted_first_half = mergeSort(arr, first_half_start, first_half_end, animations, ascending); //sort the first half recursively and update first half
+        sorted_first_half = mergeSortHelper(arr, first_half_start, first_half_end, animations, ascending); //sort the first half recursively and update first half
     }
     if(second_half_end - second_half_start > 0){
-        sorted_second_half = mergeSort(arr, second_half_start, second_half_end, animations, ascending); //sort the second half recursively and update second half
+        sorted_second_half = mergeSortHelper(arr, second_half_start, second_half_end, animations, ascending); //sort the second half recursively and update second half
     }
     
     const sorted = arr.slice(); //Sorted Array
@@ -75,20 +79,13 @@ const quickSortHelper = ( (unsorted, start, end, ascending) => {
 		let i = start + 1; //select low (ascending) / high (descending)
 		let j = end - 1; //select high (ascending) / low (descending)
 		while (true) { //cross eventually happens, so we don't ever have to change this boolean
-
-			if (ascending)
-				while (i <= j && unsorted[i] <= pivot) //increment i ////////////!!! make this more efficient by only having one while loop for increment & decrement
-					++i;
-			else
-				while (i <= j && unsorted[i] >= pivot)
-					++i;
+            while(i<=j && (ascending && unsorted[i]<=pivot || !ascending && unsorted[i] >= pivot)){ //increment i 
+                ++i;
+            }
 			if (i <= j) { // no cross
-				if (ascending)
-					while (i <= j && unsorted[j] > pivot) //if no cross, decrement j
-						--j;
-				else
-					while (i <= j && unsorted[j] < pivot)
-						--j;
+                while(i<=j && (ascending && unsorted[j] > pivot || !ascending && unsorted[j] < pivot)){ //if no cross, decrement j
+                    --j;
+                }
 			}
 			if (i > j) { //a cross happened
 				swap(unsorted, start, j); //swap pivot with j
@@ -116,7 +113,8 @@ for ascending order (same algorithm for descending, but high and low are reverse
 -swap with high pointer after cross
 */
 //Quicksort function
-export function quickSort(unsorted, ascending = true) {
-	quickSortHelper(unsorted, 0, unsorted.length, ascending);
-	return unsorted;
+export function quickSort(unsorted, animatiosn = [], ascending = true) {
+    const sorted = unsorted.slice();
+	quickSortHelper(sorted, 0, sorted.length, ascending);
+	return sorted;
 }

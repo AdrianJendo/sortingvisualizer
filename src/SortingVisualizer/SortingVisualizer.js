@@ -41,16 +41,8 @@ export function SortingVisualizer() {
     }
 
     const handleMergeSort = () => {
-
         const animations = [];
-        const sorted = mergeSort(arr, 0, arr.length-1, animations);
-
-        const start = 1;
-        const end = 2;
-
-        console.log((start+end)/2);
-
-
+        const sorted = mergeSort(arr, animations);
 
         for(let i = 0; i<animations.length; i++) {
             const arrayBars = document.getElementsByClassName('array-bar');
@@ -81,7 +73,10 @@ export function SortingVisualizer() {
     }
     
     const handleQuickSort = () => {
-        const sorted = quickSort(arr); //Note that arr gets mutated so might want to fix that
+        const animations = [];
+        const sorted = quickSort(arr, animations);
+
+
         console.log(sorted, arr);
     }
     
@@ -101,15 +96,25 @@ export function SortingVisualizer() {
 
     const testSorting = (arr) => {
         const js_sorted = arr.slice().sort((a, b) => a - b);
-        const merge_sorted = mergeSort(arr.slice()); //get shallow copy 
+
+        const sorted = [];
         
-        //Can separate into separate function if want to test multiple algorithms
-        if (js_sorted.length !== merge_sorted.length) return false;
-        for (let i = 0; i < js_sorted.length; i++) {
-            if (js_sorted[i] !== merge_sorted[i]) {
-            return false;
+        const merge_sorted = mergeSort(arr);
+        sorted.push(merge_sorted);
+
+        const quick_sorted = quickSort(arr);
+        sorted.push(quick_sorted);
+
+        for (let i = 0; i < sorted.length; i++) {
+            if (js_sorted.length !== sorted[i].length) return false;
+            for(let j = 0; j < js_sorted.length; j++){
+                if (js_sorted[j] !== sorted[i][j]) {
+                    return false;
+                }
             }
+
         }
+
         return true;
     }
 
@@ -127,7 +132,10 @@ export function SortingVisualizer() {
                 <button onClick={() => handleMergeSort()}>Merge Sort</button>
                 <button onClick={() => handleQuickSort()}>Quick Sort</button>
                 <button onClick={() => heapSort()}>Heap Sort</button>
+                <button onClick={() => bubbleSort()}>Bubble Sort</button>
+                <button onClick={() => selectionSort()}>Selection Sort</button>
                 <button onClick={() => insertionSort()}>Insertion Sort</button>
+                <button onClick={() => console.log(testSorting(unsortedArr))}>Test Sorting</button>
             </div>
         </div>
     );
