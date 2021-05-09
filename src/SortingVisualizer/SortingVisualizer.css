@@ -1,0 +1,21 @@
+.array-container {
+    position: fixed;
+    bottom: 10%;
+    width: 100%;
+    /*height: 89%;*/
+    margin-top: 1%;
+  }
+  
+  .array-bar {
+    width: 2px;
+    display: inline-block;
+    margin: 0 1px;
+    background-color: black;
+  }
+
+  .button-container {
+    position: absolute;
+    bottom: 5%;
+    width:100%;
+  }
+  
