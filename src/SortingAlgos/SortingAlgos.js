@@ -190,12 +190,10 @@ export function selectionSort(unsorted, animations=[], ascending=true) {
 //Bubble Sort O(n^2) time and O(1) space complexity
 export function bubbleSort(unsorted, animations=[], ascending=true) {
     const sorted = unsorted.slice();
-    const start = ascending ? 0 : sorted.length-1;
-    const end = ascending ? sorted.length-1 : 1;
-    for(let i=start; i !== end; i++){
-        for(let j=start; j !== end-i; j++){
-            let expression = sorted[j] > sorted[j+1];
-            expression = ascending ? expression : !expression;
+    const end = sorted.length-1; 
+    for(let i=0; i < end; i++){
+        for(let j=0; j < end-i; j++){
+            const expression = ascending ? sorted[j] > sorted[j+1] : sorted[j] < sorted[j+1];
             if(expression){
                 swap(sorted, j, j+1, animations);
             }

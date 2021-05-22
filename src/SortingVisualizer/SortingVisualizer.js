@@ -1,15 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./SortingVisualizer.css";
 import {mergeSort, quickSort, insertionSort, selectionSort, bubbleSort, heapSort} from '../SortingAlgos/SortingAlgos';
+import {Popup} from './Popup';
 
 //Animation speed
-const ANIMATION_SPEED_MS = 1; 
+//const ANIMATION_SPEED_MS = 0.01; 
 
 //Max and min values in array
 const MAX = 1000;
 const MIN = 10;
 //Number of values in array
-const LEN = 300 //1500;
+const MIN_LEN = 150;
+const MAX_LEN = 1500;
 
 //Main colour of array bars
 const PRIMARY_COLOR = 'white';
@@ -29,19 +31,39 @@ export function SortingVisualizer() {
     //Array to be sorted
     const [arr, setArr] = useState([]);
     const [unsortedArr, setUnsortedArr] = useState([]);
+    const [ascending, setAscending] = useState(true);
+    const [curAnimation, setCurAnimations] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [resetArray, setResetArray] = useState(false);
+    
+    const [numElements, setNumElements] = useState(300);
+    //const numElementsColour = `rgb(${17/99*numElements-85/33},${Math.exp(-4/33*numElements+2000/11)},${-17/99*numElements+8500/33})`
+    const numElementsColour = `rgb(${17 / 99 * numElements - 85 / 33},${-2 / 3645 * Math.pow(numElements - 825, 2) + 250},${-17 / 90 * numElements + 850 / 3})`
+    const [displayedNumElements, setDisplayedNumElements] = useState(300);
+    const [displayedElementsColour, setDisplayedElementsColour] = useState(numElementsColour);
+    
+    const [animationSpeed, setAnimationSpeed] = useState("slow"); //0.01, 0.1, 1, 2?
+    const button_colour = animationSpeed === "slow" ? "#fa8072" : animationSpeed === "medium" ? "#ffa500" : "#3cb371";
+    const ANIMATION_SPEED_MS = animationSpeed === "slow" ? 1 : animationSpeed === "medium" ? 0.1 : 0.01;
+    const [displayedAnimationSpeed, setDisplayedAnimationSpeed] = useState("Slow");
+    const [displayedAnimationSpeedColour, setDisplayedAnimationSpeedColour] = useState(button_colour);
+
+    //const [delay, setDelay] = useState(0);
+    const [doneButtonColour, setDoneButtonColour] = useState("white");
+    const [settingsButtonStyle, setSettingsButtonStyle] = useState({border: `2px solid ${button_colour}`, color:button_colour, backgroundColor:"black"});
 
     //Generate array on load
     useEffect( () => {
         newArray();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     //Generate new array
     const newArray = () => {
         const arr = [];
-        for(let i = 0; i < LEN; ++i){
+        for(let i = 0; i < numElements; ++i){
             //arr.push(randomIntFromInterval(MAX, MIN)); 
             arr.push(Math.floor(Math.random() * (MAX-MIN+1) + MIN)); //Random number from range MIN to MAX
-            
             //arr.push(2*LEN-i);
         }
         setArr(arr);
@@ -63,7 +85,7 @@ export function SortingVisualizer() {
     //change height of array bar
     const changeBarHeight = (i_bar, newHeight, arrayBars) => {
         const barOneStyle = arrayBars[i_bar].style;
-        barOneStyle.height = `${newHeight/2}px`;
+        barOneStyle.height = `${newHeight/10}%`
     }
 
     const swapBars = (animations, arrayBars, i) => {
@@ -74,18 +96,46 @@ export function SortingVisualizer() {
         }, i* ANIMATION_SPEED_MS + delay);
     }
 
+    const handleTriColourChange = (animations, arrayBars, i) => {
+        const [i_barOne, colour, set] = animations[i];
+        const barOneStyle = arrayBars[i_barOne].style;
+        if(colour === 'green'){ //change pivot to green 
+            setTimeout(() => { 
+                barOneStyle.backgroundColor = set ? TERTIARY_COLOR : PRIMARY_COLOR; //check if we are setting or resetting bar
+            }, i * ANIMATION_SPEED_MS + delay);
+        }
+        else{ //change to red
+            setTimeout(() => {
+                barOneStyle.backgroundColor = set ? SECONDARY_COLOR : PRIMARY_COLOR; //check if we are setting or resetting bar
+            }, i * ANIMATION_SPEED_MS + delay);
+        }
+    }
+
     //Set array to sorted state
     const setArraySorted = (sorted, time) => {
+        const arrayBars = document.getElementsByClassName('array-bar');
+        const final_animation_speed = 3; //ms
+
+        sorted.forEach((_, index) => {
+            setTimeout(() => {
+                const barStyle = arrayBars[index].style;
+                barStyle.backgroundColor = TERTIARY_COLOR;
+            }, time*ANIMATION_SPEED_MS + index*final_animation_speed + delay);
+        })
+
+
         setTimeout( () => { //set state array to sorted array
             setArr(sorted);
+            setCurAnimations(false);
             console.log(isSorted(sorted, unsortedArr));
-        }, time*ANIMATION_SPEED_MS + delay);
+        }, time*ANIMATION_SPEED_MS + sorted.length*final_animation_speed + delay);
     }
 
     //Merge Sort Function
     const handleMergeSort = () => {
         const animations = [];
-        const sorted = mergeSort(arr, animations);
+        const sorted = mergeSort(arr, animations, ascending);
+        setCurAnimations(true);
 
         //animations -- animations is grouped into trios of ([i,j], [i,j], [k, value])
         for(let i = 0; i<animations.length; i++) {
@@ -108,7 +158,8 @@ export function SortingVisualizer() {
     //Quick Sort Function
     const handleQuickSort = () => {
         const animations = [];
-        const sorted = quickSort(arr, animations);
+        const sorted = quickSort(arr, animations, ascending);
+        setCurAnimations(true);
 
         //animations
         let setColPrimary = true; //switch between primary and secondary colour
@@ -132,7 +183,8 @@ export function SortingVisualizer() {
     //Heap Sort Function
     const handleHeapSort = () => {
         const animations = [];
-        const sorted = heapSort(arr, animations);
+        const sorted = heapSort(arr, animations, ascending);
+        setCurAnimations(true);
 
         //animations
         let setColPrimary = true; //switch between primary and secondary colour
@@ -149,26 +201,12 @@ export function SortingVisualizer() {
         }
         setArraySorted(sorted, animations.length);
     }
-
-    const handleTriColourChange = (animations, arrayBars, i) => {
-        const [i_barOne, colour, set] = animations[i];
-        const barOneStyle = arrayBars[i_barOne].style;
-        if(colour === 'green'){ //change pivot to green 
-            setTimeout(() => { 
-                barOneStyle.backgroundColor = set ? TERTIARY_COLOR : PRIMARY_COLOR; //check if we are setting or resetting bar
-            }, i * ANIMATION_SPEED_MS + delay);
-        }
-        else{ //change to red
-            setTimeout(() => {
-                barOneStyle.backgroundColor = set ? SECONDARY_COLOR : PRIMARY_COLOR; //check if we are setting or resetting bar
-            }, i * ANIMATION_SPEED_MS + delay);
-        }
-    }
     
     //Insertion Sort Function
     const handleInsertionSort = () => {
         const animations = [];
-        const sorted = insertionSort(arr, animations);
+        const sorted = insertionSort(arr, animations, ascending);
+        setCurAnimations(true);
 
         //animations
         for(let i = 0; i<animations.length; i++) {
@@ -201,7 +239,8 @@ export function SortingVisualizer() {
     //Selection Sort Function
     const handleSelectionSort = () => {
         const animations = [];
-        const sorted = selectionSort(arr, animations);
+        const sorted = selectionSort(arr, animations, ascending);
+        setCurAnimations(true);
 
         //animations
         for(let i = 0; i<animations.length; i++) {
@@ -221,7 +260,8 @@ export function SortingVisualizer() {
     //Bubble Sort Function
     const handleBubbleSort = () => {
         const animations = [];
-        const sorted = bubbleSort(arr, animations);
+        const sorted = bubbleSort(arr, animations, ascending);
+        setCurAnimations(true);
 
         //animations
         let setColPrimary = true; //switch between primary and secondary colour
@@ -236,7 +276,6 @@ export function SortingVisualizer() {
                 swapBars(animations, arrayBars, i);
             }
         }
-
         setArraySorted(sorted, animations.length);
     }
 
@@ -252,22 +291,22 @@ export function SortingVisualizer() {
             //Append all sorting functions and compare them to the correct sorted array using the js sort function individually
             const sorted = [];
 
-            const merge_sorted = mergeSort(array.slice()); 
+            const merge_sorted = mergeSort(array.slice(), [], ascending); 
             sorted.push(merge_sorted);
     
-            const quick_sorted = quickSort(array.slice());
+            const quick_sorted = quickSort(array.slice(), [], ascending);
             sorted.push(quick_sorted);
 
-            const insertion_sorted = insertionSort(array.slice());
+            const insertion_sorted = insertionSort(array.slice(), [], ascending);
             sorted.push(insertion_sorted);
 
-            const selection_sorted = selectionSort(array.slice());
+            const selection_sorted = selectionSort(array.slice(), [], ascending);
             sorted.push(selection_sorted);
 
-            const bubble_sorted = bubbleSort(array.slice());
+            const bubble_sorted = bubbleSort(array.slice(), [], ascending);
             sorted.push(bubble_sorted);
 
-            const heap_sorted = heapSort(array.slice());
+            const heap_sorted = heapSort(array.slice(), [], ascending);
             sorted.push(heap_sorted);
 
             for (let k = 0; k < sorted.length; k++) {
@@ -280,7 +319,8 @@ export function SortingVisualizer() {
 
     //Checks if individual array is sorted correcty
     const isSorted = (sorted, unsorted) => {
-        const js_sorted = unsorted.slice().sort((a,b) => a - b); //sort using js sorting function
+
+        const js_sorted = ascending ? unsorted.slice().sort((a,b) => a - b) : unsorted.slice().sort((a,b) => b - a); //sort using js sorting function
         if (js_sorted.length !== sorted.length) return false;
             for(let i = 0; i < js_sorted.length; i++){
                 if (js_sorted[i] !== sorted[i]) {
@@ -296,25 +336,142 @@ export function SortingVisualizer() {
         return Math.floor(Math.random() * (max-min+1) + min);
     }
 
+    const toggleAscending = () => {
+        setAscending(!ascending);
+    }
+
+    const toggleSettings = () => {
+        setDoneButtonColour("white");
+        if(!curAnimation) {
+            if(resetArray && numElements>=MIN_LEN && numElements<=MAX_LEN) {
+                newArray();
+                setResetArray(false);
+            }
+            else if (numElements<MIN_LEN || numElements>MAX_LEN){
+                alert("Please ensure number of elements is between 150 and 1500");
+                return;
+            }
+            if (settingsOpen) {
+                setDisplayedAnimationSpeed(animationSpeed === "slow" ? "Slow" : animationSpeed === "medium" ? "Medium" : "Fast");
+                setDisplayedNumElements(numElements);
+                setDisplayedElementsColour(numElementsColour);
+                setDisplayedAnimationSpeedColour(button_colour);
+            }
+
+            setSettingsOpen(!settingsOpen);
+        }
+    }
+
+    const updateNumElements = (e) => {
+        const new_len = e.target.value;
+        if(new_len <= MAX_LEN && new_len !== numElements) {
+            setNumElements(new_len);
+            setResetArray(true);
+        }
+    }
+
+    const updateAnimationSpeed = (new_speed) => {
+        setAnimationSpeed(new_speed);
+    }
+
+    const toggleDoneButtonColour = (hover, colour) => {
+        if (hover) {
+            setDoneButtonColour(colour);
+        }
+        else {   
+            setDoneButtonColour("white");
+        }
+    }
+
     return (
         <div>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"></link>
             <div className = 'array-container'>
                 {
-                arr.map((value, i) => (<div className='array-bar' key = {i} style={{backgroundColor: PRIMARY_COLOR, height:`${value/2}px`}}></div>))
+                arr.map((value, i) => (<div className='array-bar' key = {i} style={{backgroundColor: PRIMARY_COLOR, height:`${value/10}%`}}></div>))
                 }
             </div>
             <br></br>
             <div className='button-container'>
-                <button onClick = {() => newArray()}>New Array</button>
-                <button onClick={() => setArr(unsortedArr)}>Reset Array</button>
-                <button onClick={() => handleMergeSort()}>Merge Sort</button>
-                <button onClick={() => handleQuickSort()}>Quick Sort</button>
-                <button onClick={() => handleHeapSort()}>Heap Sort</button>
-                <button onClick={() => handleBubbleSort()}>Bubble Sort</button>
-                <button onClick={() => handleSelectionSort()}>Selection Sort</button>
-                <button onClick={() => handleInsertionSort()}>Insertion Sort</button>
-                <button onClick={() => console.log(testSorting())}>Test Sorting</button>
+                <div className="button-set control">
+                    <h3 className="header">Controls</h3>
+                    <button className="button control-button" onClick = {() => newArray()}>New Array</button>
+                    <button className="button control-button" onClick={() => setArr(unsortedArr)}>Reset Array</button>
+                    <button className="button control-button" onClick={() => console.log(testSorting())}>Test Sorting Algorithms</button>
+                </div>
+                <div className="button-set sorting">
+                    <h3 className="header">Algorithms</h3>
+                    <button className="button sorting-button" onClick={() => handleMergeSort()}>Merge Sort</button>
+                    <button className="button sorting-button" onClick={() => handleQuickSort()}>Quick Sort</button>
+                    <button className="button sorting-button" onClick={() => handleHeapSort()}>Heap Sort</button>
+                    <button className="button sorting-button" onClick={() => handleBubbleSort()}>Bubble Sort</button>
+                    <button className="button sorting-button" onClick={() => handleSelectionSort()}>Selection Sort</button>
+                    <button className="button sorting-button" onClick={() => handleInsertionSort()}>Insertion Sort</button>
+                </div>
+                <div className="button-set ascending-control">
+                    <h3 className="header">Sort: {ascending ? <i style={{color:"#BA55D3"}}>Ascending</i> : <i style={{color:"#C71585"}}>Descending</i>}</h3>
+                    <label className="switch">
+                        <input type="checkbox" onClick={()=>toggleAscending()}/>
+                        <span className="slider-sortOrder round"></span>
+                    </label>
+                </div>
+                <div className="button-set speed-elements" style={{borderImage: `linear-gradient(45deg, ${displayedElementsColour}, ${displayedAnimationSpeedColour}) 1`}}>
+                    <h3 className="header">Speed: <i style={{color:displayedAnimationSpeedColour}}>{displayedAnimationSpeed}</i></h3>
+                    <h3 className="header">Elements: <i style={{color:displayedElementsColour}}>{displayedNumElements}</i></h3>
+                </div>
+                <div className="button-set settings">
+                    <h3 className="header">Settings</h3>
+                    <button onClick={()=>toggleSettings()} className="cog"><span className="fa fa-gears fa-2x"></span></button>
+                </div>
             </div>
+            {settingsOpen && <Popup
+                border_colour = {button_colour}
+                content={<div>
+                            <h3>Animation Speed</h3>
+                            <div className="popup-row">
+                                <div className="popup-column column-triple">
+                                    <button className='button slow-button' onClick={() => updateAnimationSpeed("slow")} style={{}}>Slow</button>
+                                </div>
+                                <div className="popup-column column-triple">
+                                    <button className='button medium-button' onClick={() => updateAnimationSpeed("medium")}>Medium</button>
+                                </div>
+                                <div className="popup-column column-triple">
+                                    <button className='button fast-button' onClick={() => updateAnimationSpeed("fast")}>Fast</button>
+                                </div>
+                            </div>
+                            <br></br>
+                            <h3>Number of Elements</h3>
+                            <div className="popup-row">
+                                <div className="popup-column column-double">
+                                    <div className="slidecontainer">
+                                        <input type="range" min="150" max="1500" value={numElements} className="slider" id="myRange" onChange={(e) => updateNumElements(e)}/>
+                                    </div>
+                                </div>
+                                <div className="popup-column column-double">
+                                    {/*<b1>Value: <span style={{color:"red"}}>{numElements}</span></b1>*/}
+                                    <span>Value: <input className="numElements-input" type="number" min="15" max="1500" style={{color:numElementsColour}} value={numElements} onChange={(e)=>updateNumElements(e)}/></span>
+                                </div>
+                            </div>
+                            <div className="popup-row">
+                                <div className="popup-column">
+                                    <div>150</div>
+                                </div>
+                                <div className="popup-column fifty">
+                                    <div>1500</div>
+                                </div>
+                            </div>
+                            <br></br>
+                            <div>
+                            <button className="button done-button"
+                                    onClick={() => toggleSettings()}
+                                    style={{border: `2px solid ${button_colour}`, backgroundColor:doneButtonColour}}
+                                    onMouseEnter={() => toggleDoneButtonColour(true, button_colour)}
+                                    onMouseLeave={() => toggleDoneButtonColour(false, button_colour)}>
+                                Done
+                            </button>
+                            </div>
+                    </div>}
+            />}
         </div>
     );
 }
