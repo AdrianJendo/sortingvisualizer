@@ -32,7 +32,7 @@
 }
 
 .ascending-control {
-	border: 2px solid #ff00ff;
+	border: 2px solid; /*#ff00ff*/
 	width: 156px;
 }
 
@@ -170,4 +170,13 @@ input:checked + .slider-sortOrder:before {
 .cog:hover {
 	background-color: #daa520;
 	cursor: pointer;
+}
+
+.not-allowed-cursor {
+	cursor: not-allowed;
+}
+
+.unclickable {
+	pointer-events: none;
+	opacity: 0.6; 
 }

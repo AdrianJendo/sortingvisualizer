@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import "./SortingVisualizer.css";
 import {mergeSort, quickSort, insertionSort, selectionSort, bubbleSort, heapSort} from '../SortingAlgos/SortingAlgos';
 import {Popup} from './Popup';
+import {Loader} from './Loader';
 
 //Animation speed
 //const ANIMATION_SPEED_MS = 0.01; 
@@ -37,20 +38,19 @@ export function SortingVisualizer() {
     const [resetArray, setResetArray] = useState(false);
     
     const [numElements, setNumElements] = useState(300);
-    //const numElementsColour = `rgb(${17/99*numElements-85/33},${Math.exp(-4/33*numElements+2000/11)},${-17/99*numElements+8500/33})`
-    const numElementsColour = `rgb(${17 / 99 * numElements - 85 / 33},${-2 / 3645 * Math.pow(numElements - 825, 2) + 250},${-17 / 90 * numElements + 850 / 3})`
+    const numElementsColour = `rgb(${17 / 99 * numElements - 85 / 33},${-2 / 3645 * Math.pow(numElements - 825, 2) + 250},${-17 / 90 * numElements + 850 / 3})` //`rgb(${17/99*numElements-85/33},${Math.exp(-4/33*numElements+2000/11)},${-17/99*numElements+8500/33})`
     const [displayedNumElements, setDisplayedNumElements] = useState(300);
     const [displayedElementsColour, setDisplayedElementsColour] = useState(numElementsColour);
     
     const [animationSpeed, setAnimationSpeed] = useState("slow"); //0.01, 0.1, 1, 2?
+    //const [delay, setDelay] = useState(0);
     const button_colour = animationSpeed === "slow" ? "#fa8072" : animationSpeed === "medium" ? "#ffa500" : "#3cb371";
     const ANIMATION_SPEED_MS = animationSpeed === "slow" ? 1 : animationSpeed === "medium" ? 0.1 : 0.01;
     const [displayedAnimationSpeed, setDisplayedAnimationSpeed] = useState("Slow");
     const [displayedAnimationSpeedColour, setDisplayedAnimationSpeedColour] = useState(button_colour);
 
-    //const [delay, setDelay] = useState(0);
+    const [selectedAlgorithm, setSelectedAlgorithm] = useState("");
     const [doneButtonColour, setDoneButtonColour] = useState("white");
-    const [settingsButtonStyle, setSettingsButtonStyle] = useState({border: `2px solid ${button_colour}`, color:button_colour, backgroundColor:"black"});
 
     //Generate array on load
     useEffect( () => {
@@ -60,12 +60,14 @@ export function SortingVisualizer() {
 
     //Generate new array
     const newArray = () => {
+        handleResetArray(true);
         const arr = [];
         for(let i = 0; i < numElements; ++i){
             //arr.push(randomIntFromInterval(MAX, MIN)); 
             arr.push(Math.floor(Math.random() * (MAX-MIN+1) + MIN)); //Random number from range MIN to MAX
             //arr.push(2*LEN-i);
         }
+        setSelectedAlgorithm("");
         setArr(arr);
         setUnsortedArr(arr);
     }
@@ -96,39 +98,39 @@ export function SortingVisualizer() {
         }, i* ANIMATION_SPEED_MS + delay);
     }
 
-    const handleTriColourChange = (animations, arrayBars, i) => {
+    const handleTriColourChange = (animations, arrayBars, i, extra_delay=0) => {
         const [i_barOne, colour, set] = animations[i];
         const barOneStyle = arrayBars[i_barOne].style;
         if(colour === 'green'){ //change pivot to green 
             setTimeout(() => { 
                 barOneStyle.backgroundColor = set ? TERTIARY_COLOR : PRIMARY_COLOR; //check if we are setting or resetting bar
-            }, i * ANIMATION_SPEED_MS + delay);
+            }, i * ANIMATION_SPEED_MS + delay + extra_delay);
         }
         else{ //change to red
             setTimeout(() => {
                 barOneStyle.backgroundColor = set ? SECONDARY_COLOR : PRIMARY_COLOR; //check if we are setting or resetting bar
-            }, i * ANIMATION_SPEED_MS + delay);
+            }, i * ANIMATION_SPEED_MS + delay + extra_delay);
         }
     }
 
     //Set array to sorted state
-    const setArraySorted = (sorted, time) => {
+    const setArraySorted = (sorted, time, extra_delay=0) => {
         const arrayBars = document.getElementsByClassName('array-bar');
-        const final_animation_speed = 3; //ms
+        const final_animation_speed = 2; //ms
 
         sorted.forEach((_, index) => {
             setTimeout(() => {
                 const barStyle = arrayBars[index].style;
                 barStyle.backgroundColor = TERTIARY_COLOR;
-            }, time*ANIMATION_SPEED_MS + index*final_animation_speed + delay);
-        })
+            }, time*ANIMATION_SPEED_MS + index*final_animation_speed + delay + extra_delay);
+        });
 
 
         setTimeout( () => { //set state array to sorted array
             setArr(sorted);
             setCurAnimations(false);
             console.log(isSorted(sorted, unsortedArr));
-        }, time*ANIMATION_SPEED_MS + sorted.length*final_animation_speed + delay);
+        }, time*ANIMATION_SPEED_MS + sorted.length*final_animation_speed + delay + extra_delay);
     }
 
     //Merge Sort Function
@@ -136,6 +138,7 @@ export function SortingVisualizer() {
         const animations = [];
         const sorted = mergeSort(arr, animations, ascending);
         setCurAnimations(true);
+        setSelectedAlgorithm("merge");
 
         //animations -- animations is grouped into trios of ([i,j], [i,j], [k, value])
         for(let i = 0; i<animations.length; i++) {
@@ -160,6 +163,7 @@ export function SortingVisualizer() {
         const animations = [];
         const sorted = quickSort(arr, animations, ascending);
         setCurAnimations(true);
+        setSelectedAlgorithm("quick");
 
         //animations
         let setColPrimary = true; //switch between primary and secondary colour
@@ -185,6 +189,7 @@ export function SortingVisualizer() {
         const animations = [];
         const sorted = heapSort(arr, animations, ascending);
         setCurAnimations(true);
+        setSelectedAlgorithm("heap");
 
         //animations
         let setColPrimary = true; //switch between primary and secondary colour
@@ -205,15 +210,18 @@ export function SortingVisualizer() {
     //Insertion Sort Function
     const handleInsertionSort = () => {
         const animations = [];
+        const start = new Date();
         const sorted = insertionSort(arr, animations, ascending);
         setCurAnimations(true);
-
+        setSelectedAlgorithm("insertion");
+        
         //animations
         for(let i = 0; i<animations.length; i++) {
+            const cur = new Date() - start;
             const arrayBars = document.getElementsByClassName('array-bar');
             const isColourChange = typeof animations[i][1] === 'string';
             if(isColourChange) { //change colour to green or red
-                handleTriColourChange(animations, arrayBars, i);
+                handleTriColourChange(animations, arrayBars, i, cur);
             }
             else {
                 setTimeout( () => {
@@ -230,10 +238,10 @@ export function SortingVisualizer() {
                     }
                     i--;
                     */
-                }, i* ANIMATION_SPEED_MS + delay);
+                }, i* ANIMATION_SPEED_MS + delay + cur);
             }
         }
-        setArraySorted(sorted, animations.length);
+        setArraySorted(sorted, animations.length, new Date() - start);
     }
 
     //Selection Sort Function
@@ -241,6 +249,7 @@ export function SortingVisualizer() {
         const animations = [];
         const sorted = selectionSort(arr, animations, ascending);
         setCurAnimations(true);
+        setSelectedAlgorithm("selection");
 
         //animations
         for(let i = 0; i<animations.length; i++) {
@@ -262,6 +271,7 @@ export function SortingVisualizer() {
         const animations = [];
         const sorted = bubbleSort(arr, animations, ascending);
         setCurAnimations(true);
+        setSelectedAlgorithm("bubble");
 
         //animations
         let setColPrimary = true; //switch between primary and secondary colour
@@ -276,6 +286,7 @@ export function SortingVisualizer() {
                 swapBars(animations, arrayBars, i);
             }
         }
+
         setArraySorted(sorted, animations.length);
     }
 
@@ -352,12 +363,12 @@ export function SortingVisualizer() {
                 return;
             }
             if (settingsOpen) {
+                handleResetArray(resetArray);
                 setDisplayedAnimationSpeed(animationSpeed === "slow" ? "Slow" : animationSpeed === "medium" ? "Medium" : "Fast");
                 setDisplayedNumElements(numElements);
                 setDisplayedElementsColour(numElementsColour);
                 setDisplayedAnimationSpeedColour(button_colour);
             }
-
             setSettingsOpen(!settingsOpen);
         }
     }
@@ -383,6 +394,54 @@ export function SortingVisualizer() {
         }
     }
 
+    const handleResetArray = (set=false) => {
+        if(!set){
+            setArr(unsortedArr); 
+        }
+        setSelectedAlgorithm("");
+        const arrayBars = document.getElementsByClassName('array-bar');
+        arr.forEach((_, index) => {
+            const barStyle = arrayBars[index].style;
+            barStyle.backgroundColor = PRIMARY_COLOR;
+        })
+    }
+
+    const handleTestSorting = () => {
+        //add loading screen
+        if(testSorting()){
+            alert("Testing Passed");
+        }
+        else{
+            alert("Testing Failed");
+        }
+    }
+
+    /*
+    useEffect(() => {
+        switch(selectedAlgorithm) {
+            case "insertion":
+                handleInsertionSort();
+                break;
+            default:
+                break;
+        }
+    }, [selectedAlgorithm]);
+
+
+    useEffect(() => {
+        if(curAnimation && !disableLoading){
+            setLoading(true);
+        }
+        else{
+            setLoading(false);
+        }
+    }, [curAnimation, disableLoading]);
+    */
+
+    const buttonsClickable = curAnimation || unsortedArr !== arr ? "unclickable" : "";
+    const resetControls = curAnimation ? "unclickable" : "";
+    const selectedButtonStyle = {color:"white",backgroundColor:"#4caf50", pointerEvents:"none"};
+
     return (
         <div>
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"></link>
@@ -395,20 +454,60 @@ export function SortingVisualizer() {
             <div className='button-container'>
                 <div className="button-set control">
                     <h3 className="header">Controls</h3>
-                    <button className="button control-button" onClick = {() => newArray()}>New Array</button>
-                    <button className="button control-button" onClick={() => setArr(unsortedArr)}>Reset Array</button>
-                    <button className="button control-button" onClick={() => console.log(testSorting())}>Test Sorting Algorithms</button>
+                    <span className={resetControls==="unclickable" ? "not-allowed-cursor" : ""}>
+                        <button className={`button control-button ${resetControls}`} onClick = {() => newArray()}>New Array</button>
+                        <button className={`button control-button ${resetControls}`} onClick={() => handleResetArray()}>Reset Array</button>
+                        <button className={`button control-button ${resetControls}`} onClick={() => handleTestSorting()}>Test Sorting Algorithms</button>
+                    </span>
                 </div>
                 <div className="button-set sorting">
                     <h3 className="header">Algorithms</h3>
-                    <button className="button sorting-button" onClick={() => handleMergeSort()}>Merge Sort</button>
-                    <button className="button sorting-button" onClick={() => handleQuickSort()}>Quick Sort</button>
-                    <button className="button sorting-button" onClick={() => handleHeapSort()}>Heap Sort</button>
-                    <button className="button sorting-button" onClick={() => handleBubbleSort()}>Bubble Sort</button>
-                    <button className="button sorting-button" onClick={() => handleSelectionSort()}>Selection Sort</button>
-                    <button className="button sorting-button" onClick={() => handleInsertionSort()}>Insertion Sort</button>
+                    <span className={buttonsClickable==="unclickable" ? "not-allowed-cursor" : ""}>
+                        <button 
+                            className={`button sorting-button ${selectedAlgorithm !== "merge" && buttonsClickable}`} 
+                            style={selectedAlgorithm==="merge" ? selectedButtonStyle : null} 
+                            onClick={() => handleMergeSort()}
+                        >
+                            Merge Sort
+                        </button>
+                        <button 
+                            className={`button sorting-button ${selectedAlgorithm !== "quick" && buttonsClickable}`} 
+                            style={selectedAlgorithm==="quick" ? selectedButtonStyle : null} 
+                            onClick={() => handleQuickSort()}
+                        >
+                            Quick Sort
+                        </button>
+                        <button 
+                            className={`button sorting-button ${selectedAlgorithm !== "heap" && buttonsClickable}`} 
+                            style={selectedAlgorithm==="heap" ? selectedButtonStyle : null} 
+                            onClick={() => handleHeapSort()}
+                        >
+                            Heap Sort
+                        </button>
+                        <button 
+                            className={`button sorting-button ${selectedAlgorithm !== "bubble" && buttonsClickable}`} 
+                            style={selectedAlgorithm==="bubble" ? selectedButtonStyle : null} 
+                            onClick={() => handleBubbleSort()}
+                        >
+                            Bubble Sort
+                        </button>
+                        <button 
+                            className={`button sorting-button ${selectedAlgorithm !== "selection" && buttonsClickable}`} 
+                            style={selectedAlgorithm==="selection" ? selectedButtonStyle : null} 
+                            onClick={() => handleSelectionSort()}
+                        >
+                            Selection Sort
+                        </button>
+                        <button 
+                            className={`button sorting-button ${selectedAlgorithm !== "insertion" && buttonsClickable}`} 
+                            style={selectedAlgorithm==="insertion" ? selectedButtonStyle : null} 
+                            onClick={() => handleInsertionSort()}
+                        >
+                            Insertion Sort
+                        </button>
+                    </span>
                 </div>
-                <div className="button-set ascending-control">
+                <div className="button-set ascending-control" style={{borderColor: ascending ? "#ff00ff": "#ff00a1"}}> 
                     <h3 className="header">Sort: {ascending ? <i style={{color:"#BA55D3"}}>Ascending</i> : <i style={{color:"#C71585"}}>Descending</i>}</h3>
                     <label className="switch">
                         <input type="checkbox" onClick={()=>toggleAscending()}/>
@@ -430,13 +529,31 @@ export function SortingVisualizer() {
                             <h3>Animation Speed</h3>
                             <div className="popup-row">
                                 <div className="popup-column column-triple">
-                                    <button className='button slow-button' onClick={() => updateAnimationSpeed("slow")} style={{}}>Slow</button>
+                                    <button 
+                                        className='button slow-button'
+                                        onClick={() => updateAnimationSpeed("slow")}
+                                        style={animationSpeed === "slow" ? { backgroundColor: "#fa8072", color: "white", pointerEvents: "none" } : null}
+                                    >
+                                        Slow
+                                    </button>
                                 </div>
                                 <div className="popup-column column-triple">
-                                    <button className='button medium-button' onClick={() => updateAnimationSpeed("medium")}>Medium</button>
+                                    <button 
+                                        className='button medium-button'
+                                        onClick={() => updateAnimationSpeed("medium")}
+                                        style={animationSpeed === "medium" ? { backgroundColor: "#ffa500", color: "white", pointerEvents: "none" } : null}
+                                    >
+                                        Medium
+                                    </button>
                                 </div>
                                 <div className="popup-column column-triple">
-                                    <button className='button fast-button' onClick={() => updateAnimationSpeed("fast")}>Fast</button>
+                                    <button 
+                                        className='button fast-button' 
+                                        onClick={() => updateAnimationSpeed("fast")}
+                                        style={animationSpeed === "fast" ? { backgroundColor: "#3cb371", color: "white", pointerEvents: "none"} : null}
+                                    >
+                                        Fast
+                                    </button>
                                 </div>
                             </div>
                             <br></br>
@@ -472,6 +589,7 @@ export function SortingVisualizer() {
                             </div>
                     </div>}
             />}
+            {/*loading && <Loader/>*/}
         </div>
     );
 }
