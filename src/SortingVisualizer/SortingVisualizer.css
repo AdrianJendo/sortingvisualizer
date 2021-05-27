@@ -7,7 +7,7 @@
 }
 
 .array-bar {
-	width: 1px; /*4-5px;*/
+	width: calc(1500px / var(--numBars));
 	display: inline-block;
 	/*margin: 0 1px;*/
 }

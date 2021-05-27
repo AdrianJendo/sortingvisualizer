@@ -16,7 +16,7 @@ export function mergeSort(arr, animations = [], ascending=true) {
     
     const sorted = []; //Sorted Array
     let i=0, j=0; //Index pointers for both sublists
-    
+
     while(i<first_half.length && j<second_half.length){
         if((first_half[i] > second_half[j] && ascending) || (first_half[i] <= second_half[j] && !ascending)) { //push back values into sorted array as appropriate and increment pointers
             sorted.push(second_half[j]);

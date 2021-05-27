@@ -204,7 +204,7 @@ export function bubbleSort(unsorted, animations=[], ascending=true) {
 
 
 //https://big-o.io/algorithms/comparison/heapsort/
-//Heap Sort (improved selection sort) O(n logn) time and O(1) space complexity <- algorithm can be done in O(1) space complexity but been O(n) space complexity to build heap
+//Heap Sort (improved selection sort) O(n logn) time and O(1) space complexity <- algorithm can be done in O(1) space complexity but need O(n) space complexity to build heap
 export function heapSort(unsorted, animations=[], ascending=true){
     const sorted = unsorted.slice();
     let size = sorted.length;

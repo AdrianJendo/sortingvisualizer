@@ -1,0 +1,27 @@
+.progress {
+	position: relative;
+	width: 500px;
+	height: 60px;
+	background: #9cbab4;
+	border-radius: 15px;
+	overflow: hidden;
+	left: calc(50% - 250px);
+	top: 10vh;
+  }
+  
+  .progress__fill {
+	width: calc(var(--width, 0) * 1%);
+	height: 100%;
+	background: #009579;
+	transition: all 0.2s;
+  }
+  
+  .progress__text {
+	position: absolute;
+	top: 50%;
+	right: 5px;
+	transform: translateY(-50%);
+	font: bold 18px "Quicksand", sans-serif;
+	color: #ffffff;
+  }
+  

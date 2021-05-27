@@ -4,15 +4,12 @@ import {mergeSort, quickSort, insertionSort, selectionSort, bubbleSort, heapSort
 import {Popup} from './Popup';
 import {ProgressBar} from './ProgressBar';
 
-//Animation speed
-//const ANIMATION_SPEED_MS = 0.01; 
-
 //Max and min values in array
 const MAX = 1000;
 const MIN = 10;
-//Number of values in array
-const MIN_LEN = 15;
-const MAX_LEN = 1500;
+//Max and min length of array
+const MIN_LEN = 50;
+const MAX_LEN = 1000;
 
 //Main colour of array bars
 const PRIMARY_COLOR = 'white';
@@ -23,41 +20,42 @@ const SECONDARY_COLOR = 'red';
 //Third colour for pivot, insertion sort, etc.
 const TERTIARY_COLOR = 'green';
 
-const delay = 2000;
+//Delay before starting animation
+const delay = 100;
 
 export function SortingVisualizer() {
-
-    //Array to be sorted
-    const [arr, setArr] = useState([]);
-    const [unsortedArr, setUnsortedArr] = useState([]);
-    const [ascending, setAscending] = useState(true);
-    const [curAnimation, setCurAnimations] = useState(false);
-    const [settingsOpen, setSettingsOpen] = useState(false);
-    const [resetArray, setResetArray] = useState(false);
+    const [arr, setArr] = useState([]); //Array
+    const [unsortedArr, setUnsortedArr] = useState([]); //Copy of array that remains unsorted
+    const [ascending, setAscending] = useState(true); //Determines sorting order
+    const [curAnimation, setCurAnimations] = useState(false); //True if currently animating
+    const [settingsOpen, setSettingsOpen] = useState(false); //True is settings are open
+    const [resetArray, setResetArray] = useState(false); //Determines whether array should be reset when closing settings (if numElements was changed in settings or array is currently in green sorted state)
     
-    const [numElements, setNumElements] = useState(300);
-    const numElementsColour = `rgb(${17 / 99 * numElements - 85 / 33},${-2 / 3645 * Math.pow(numElements - 825, 2) + 250},${-17 / 90 * numElements + 850 / 3})` //`rgb(${17/99*numElements-85/33},${Math.exp(-4/33*numElements+2000/11)},${-17/99*numElements+8500/33})`
-    const [displayedNumElements, setDisplayedNumElements] = useState(300);
+    const [numElements, setNumElements] = useState(300); //size of array
+    //`rgb(${17 / 99 * numElements - 85 / 33},${-2 / 3645 * Math.pow(numElements - 825, 2) + 250},${-17 / 90 * numElements + 850 / 3})` <-- for 1500 (max) 150 (min)
+    const numElementsColour = `rgb(${ 51/190 * numElements - 255 / 19},${ -2 / 1805 * Math.pow(numElements - 525, 2) + 250},${-51 / 190 * numElements + 5100 / 19})` ; //display colour for number of elements
+    const [displayedNumElements, setDisplayedNumElements] = useState(300); //updated when saving settings
     const [displayedElementsColour, setDisplayedElementsColour] = useState(numElementsColour);
     
-    const [animationSpeed, setAnimationSpeed] = useState("slow"); //0.01, 0.1, 1, 2?
+    const [animationSpeed, setAnimationSpeed] = useState("slow"); 
     const button_colour = animationSpeed === "slow" ? "#fa8072" : animationSpeed === "medium" ? "#ffa500" : "#3cb371";
-    const [displayedAnimationSpeed, setDisplayedAnimationSpeed] = useState("Slow");
-    const [displayedAnimationSpeedColour, setDisplayedAnimationSpeedColour] = useState(button_colour);
+    const [displayedAnimationSpeed, setDisplayedAnimationSpeed] = useState("Slow"); //updated when saving settings
+    const [displayedAnimationSpeedColour, setDisplayedAnimationSpeedColour] = useState(button_colour); 
     
     const [selectedAlgorithm, setSelectedAlgorithm] = useState("");
-    const [doneButtonColour, setDoneButtonColour] = useState("white");
+    const [doneButtonColour, setDoneButtonColour] = useState("white"); //border and hover colour of done button (in settings)
 
-    //const [progress, setProgress] = useState(0);
-
-    //const ANIMATION_SPEED_MS = animationSpeed === "slow" ? 1 : animationSpeed === "medium" ? 0.1 : 0.01;
+    const [progress, setProgress] = useState(0); //Progress of progress bar [only used for O(n^2) functions]
 
     const determineAnimationSpeedMS = (algorithm) => {
-        if(algorithm === "merge" || algorithm === "quick" || algorithm === "heap"){
-            return animationSpeed === "slow" ? 1 : animationSpeed === "medium" ? 0.5 : 0.1;
+        if(numElements <= 100) {
+            return animationSpeed === "slow" ? 10 : animationSpeed === "medium" ? 6 : 3;
+        }
+        else if(algorithm === "merge" || algorithm === "quick" || algorithm === "heap"){
+            return animationSpeed === "slow" ? 1.5 : animationSpeed === "medium" ? 1 : 0.5;
         }
         else{
-            return animationSpeed === "slow" ? 0.1 : animationSpeed === "medium" ? 0.05 : 0.01;
+            return animationSpeed === "slow" ? 1 : animationSpeed === "medium" ? 0.1 : 0.01;
         }
     }
 
@@ -69,12 +67,11 @@ export function SortingVisualizer() {
 
     //Generate new array
     const newArray = () => {
-        handleResetArray(true);
+        handleResetArray(true); //Resets colours & selected algorithm
         const arr = [];
         for(let i = 0; i < numElements; ++i){
-            //arr.push(randomIntFromInterval(MAX, MIN)); 
-            arr.push(Math.floor(Math.random() * (MAX-MIN+1) + MIN)); //Random number from range MIN to MAX
-            //arr.push(2*LEN-i);
+            arr.push(randomIntFromInterval(MAX, MIN));  //Random number from range MIN to MAX
+            //arr.push(Math.floor(Math.random() * (MAX-MIN+1) + MIN)); 
         }
         setSelectedAlgorithm("");
         setArr(arr);
@@ -99,6 +96,7 @@ export function SortingVisualizer() {
         barOneStyle.height = `${newHeight/10}%`
     }
 
+    //swap position of two array bars
     const swapBars = (animations, arrayBars, i, animation_speed_ms, extra_delay=0) => {
         setTimeout( () => {
             const [i_barOne, newHeightOne, i_barTwo, newHeightTwo] = animations[i];
@@ -107,6 +105,7 @@ export function SortingVisualizer() {
         }, i* animation_speed_ms + extra_delay + delay);
     }
 
+    //change bar colour to either primary, secondary, or tertiary
     const handleTriColourChange = (animations, arrayBars, i, animation_speed_ms, extra_delay=0) => {
         const [i_barOne, colour, set] = animations[i];
         const barOneStyle = arrayBars[i_barOne].style;
@@ -226,7 +225,7 @@ export function SortingVisualizer() {
     }
     
     //Insertion Sort Function
-    const handleInsertionSort = async () => {
+    const handleInsertionSort = () => {
         const animations = [];
         const start = new Date();
         const sorted = insertionSort(arr, animations, ascending);
@@ -235,40 +234,10 @@ export function SortingVisualizer() {
         const ANIMATION_SPEED_MS = determineAnimationSpeedMS("insertion");
         
         //animations
-        for(let i = 0; i<animations.length; i++) {
-            const cur = new Date() - start;
-            const arrayBars = document.getElementsByClassName('array-bar');
-            const isColourChange = typeof animations[i][1] === 'string';
-            if(isColourChange) { //change colour to green or red
-                handleTriColourChange(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
-            }
-            else {
-                setTimeout( () => {
-                    for(let j=0; j<animations[i].length-1; j+=2){ //insert pivot in correct location of array and shift over all other elements 
-                        const i_bar = animations[i][j];
-                        const newHeight = animations[i][j+1];
-                        changeBarHeight(i_bar, newHeight, arrayBars);
-                    }
-                    /*
-                    while(i < animations.length && typeof animations[i][1] !== 'string'){ //alternate method to above (more messy so not used)
-                        const [i_bar, newHeight] = animations[i];
-                        changeBarHeight(i_bar, newHeight, arrayBars);
-                        i++;
-                    }
-                    i--;
-                    */
-                }, i* ANIMATION_SPEED_MS + cur + delay);
-            }
-        }
-
-        /*
-        for(let i = 0; i<animations.length; i++) {
-            const arrayBars = document.getElementsByClassName('array-bar');
-            const isColourChange = typeof animations[i][1] === 'string';
-            
-            new Promise(resolve => {
-                //setTimeout(()=> updateProgress(animations.length, i), 0);
-            }).then(() => {
+        if(numElements < 700) { //Only do progress bar for array longer than 700
+            for(let i = 0; i<animations.length; i++) {
+                const arrayBars = document.getElementsByClassName('array-bar');
+                const isColourChange = typeof animations[i][1] === 'string';
                 const cur = new Date() - start;
                 if(isColourChange) { //change colour to green or red
                     handleTriColourChange(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
@@ -278,7 +247,7 @@ export function SortingVisualizer() {
                         for(let j=0; j<animations[i].length-1; j+=2){ //insert pivot in correct location of array and shift over all other elements 
                             const i_bar = animations[i][j];
                             const newHeight = animations[i][j+1];
-                            changeBarHeight(i_bar, newHeight, arrayBars + delay);
+                            changeBarHeight(i_bar, newHeight, arrayBars);
                         }
                         /*
                         while(i < animations.length && typeof animations[i][1] !== 'string'){ //alternate method to above (more messy so not used)
@@ -287,20 +256,50 @@ export function SortingVisualizer() {
                             i++;
                         }
                         i--;
-                        /
-                    }, i* ANIMATION_SPEED_MS + cur);
+                        */
+                    }, i* ANIMATION_SPEED_MS + cur + delay);
                 }
+            }
+            setArraySorted(sorted, animations.length, ANIMATION_SPEED_MS, new Date() - start);
+        }
+        else {
+            new Promise(resolve => { //bring up progress bar
+                setProgress(1);
+                resolve();
+            }).then( () => {
+                for(let i = 0; i<animations.length; i++) {
+                    const arrayBars = document.getElementsByClassName('array-bar');
+                    const isColourChange = typeof animations[i][1] === 'string';
+                    new Promise(resolve => {
+                        setTimeout(()=> {
+                            if(i === animations.length-1){
+                                setProgress(0); //Turn off progress bar
+                            }
+                            else{
+                                setProgress(Math.round(i/animations.length*100)); //Updates progress bar
+                            }
+                        }, 0);
+                        resolve();
+                    }).then(() => {
+                        const cur = new Date() - start;
+                        if(isColourChange) { //change colour to green or red
+                            handleTriColourChange(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
+                        }
+                        else {
+                            setTimeout( () => {
+                                for(let j=0; j<animations[i].length-1; j+=2){ //insert pivot in correct location of array and shift over all other elements 
+                                    const i_bar = animations[i][j];
+                                    const newHeight = animations[i][j+1];
+                                    changeBarHeight(i_bar, newHeight, arrayBars);
+                                }
+                            }, i* ANIMATION_SPEED_MS + cur + delay);
+                        }
+                    });
+                }
+            }).then(() => {
+                setArraySorted(sorted, animations.length, ANIMATION_SPEED_MS, new Date() - start);
             });
         }
-        */
-        setArraySorted(sorted, animations.length, ANIMATION_SPEED_MS, new Date() - start);
-    }
-
-    const updateProgress = (len, i) => {
-        const value = Math.round(i/len*100);
-        const progressBar = document.querySelector(".progress");
-        progressBar.querySelector(".progress__fill").style.width = `${value}%`;
-        progressBar.querySelector(".progress__text").textContent = `${value}%`;
     }
 
     //Selection Sort Function
@@ -313,19 +312,52 @@ export function SortingVisualizer() {
         const ANIMATION_SPEED_MS = determineAnimationSpeedMS("selection");
 
         //animations
-        for(let i = 0; i<animations.length; i++) {
-            const arrayBars = document.getElementsByClassName('array-bar');
-            const isColourChange = animations[i].length === 3;
-            const cur = new Date() - start;
-            if(isColourChange) { //change colour to green or red
-                handleTriColourChange(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
+        if(numElements < 700){
+            for(let i = 0; i<animations.length; i++) {
+                const arrayBars = document.getElementsByClassName('array-bar');
+                const isColourChange = animations[i].length === 3;
+                const cur = new Date() - start;
+                if(isColourChange) { //change colour to green or red
+                    handleTriColourChange(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
+                }
+                else {
+                    swapBars(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
+                }
             }
-            else {
-                swapBars(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
-            }
+            setArraySorted(sorted, animations.length, ANIMATION_SPEED_MS, new Date() - start);
         }
-
-        setArraySorted(sorted, animations.length, ANIMATION_SPEED_MS, new Date() - start);
+        else {
+            new Promise(resolve => { //progress bar
+                setProgress(1);
+                resolve();
+            }).then( () => {
+                for(let i = 0; i<animations.length; i++) {
+                    const arrayBars = document.getElementsByClassName('array-bar');
+                    const isColourChange = animations[i].length === 3;
+                    new Promise(resolve => {
+                        setTimeout(()=> {
+                            if(i === animations.length-1){
+                                setProgress(0);
+                            }
+                            else{
+                                setProgress(Math.round(i/animations.length*100));
+                            }
+                        }, 0);
+                        resolve();
+                    }).then(() => {
+                        const cur = new Date() - start;
+                        if(isColourChange) { //change colour to green or red
+                            handleTriColourChange(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
+                        }
+                        else {
+                            swapBars(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
+                        }
+                    });
+                }
+            }).then(() => {
+                setArraySorted(sorted, animations.length, ANIMATION_SPEED_MS, new Date() - start);
+            });
+        }
     }
 
     //Bubble Sort Function
@@ -339,20 +371,55 @@ export function SortingVisualizer() {
 
         //animations
         let setColPrimary = true; //switch between primary and secondary colour
-        for(let i = 0; i<animations.length; i++) {
-            const arrayBars = document.getElementsByClassName('array-bar');
-            const isColourChange = animations[i].length === 2;
-            const cur = new Date() - start;
-            if(isColourChange) { //change colour of bar
-                setColPrimary = !setColPrimary;
-                changeColour(animations, arrayBars, setColPrimary, i, ANIMATION_SPEED_MS, cur);
+        if(numElements < 700){
+            for(let i = 0; i<animations.length; i++) {
+                const arrayBars = document.getElementsByClassName('array-bar');
+                const isColourChange = animations[i].length === 2;
+                const cur = new Date() - start;
+                if(isColourChange) { //change colour of bar
+                    setColPrimary = !setColPrimary;
+                    changeColour(animations, arrayBars, setColPrimary, i, ANIMATION_SPEED_MS, cur);
+                }
+                else { //swap bars
+                    swapBars(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
+                }
             }
-            else { //swap bars
-                swapBars(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
-            }
+    
+            setArraySorted(sorted, animations.length, ANIMATION_SPEED_MS, new Date() - start);
         }
-
-        setArraySorted(sorted, animations.length, ANIMATION_SPEED_MS, new Date() - start);
+        else{
+            new Promise(resolve => { //progress bar
+                setProgress(1);
+                resolve();
+            }).then( () => {
+                for(let i = 0; i<animations.length; i++) {
+                    const arrayBars = document.getElementsByClassName('array-bar');
+                    const isColourChange = animations[i].length === 2;
+                    new Promise(resolve => {
+                        setTimeout(()=> {
+                            if(i === animations.length-1){
+                                setProgress(0);
+                            }
+                            else{
+                                setProgress(Math.round(i/animations.length*100));
+                            }
+                        }, 0);
+                        resolve();
+                    }).then(() => {
+                        const cur = new Date() - start;
+                        if(isColourChange) { //change colour of bar
+                            setColPrimary = !setColPrimary; //gets warning about unsafe reference to variable
+                            changeColour(animations, arrayBars, setColPrimary, i, ANIMATION_SPEED_MS, cur);
+                        }
+                        else { //swap bars
+                            swapBars(animations, arrayBars, i, ANIMATION_SPEED_MS, cur);
+                        }
+                    });
+                }
+            }).then(() => {
+                setArraySorted(sorted, animations.length, ANIMATION_SPEED_MS, new Date() - start);
+            });
+        }
     }
 
     //Tests sorting algorithms
@@ -388,8 +455,8 @@ export function SortingVisualizer() {
             for (let k = 0; k < sorted.length; k++) {
                 if(!isSorted(sorted[k], array)) return false;
             }
-          }
-
+        }
+        
         return true;
     }
 
@@ -410,23 +477,25 @@ export function SortingVisualizer() {
         return Math.floor(Math.random() * (max-min+1) + min);
     }
 
+    //Toggles ascending / descending sorting order
     const toggleAscending = () => {
         setAscending(!ascending);
     }
 
+    //Open and close settings popup
     const toggleSettings = () => {
         setDoneButtonColour("white");
-        if(!curAnimation) {
-            if(resetArray && numElements>=MIN_LEN && numElements<=MAX_LEN) {
+        if(!curAnimation) { //Only toggle if not currently animating
+            if(resetArray && numElements>=MIN_LEN && numElements<=MAX_LEN) { //Check if input is between max and min values && array needs to be reset on close
                 newArray();
                 setResetArray(false);
             }
-            else if (numElements<MIN_LEN || numElements>MAX_LEN){
+            else if (numElements<MIN_LEN || numElements>MAX_LEN){ 
                 alert("Please ensure number of elements is between 150 and 1500");
                 return;
             }
             if (settingsOpen) {
-                handleResetArray(resetArray);
+                handleResetArray(resetArray); //changes back colour, resets selected algorithm, and reorders array if needed
                 setDisplayedAnimationSpeed(animationSpeed === "slow" ? "Slow" : animationSpeed === "medium" ? "Medium" : "Fast");
                 setDisplayedNumElements(numElements);
                 setDisplayedElementsColour(numElementsColour);
@@ -436,6 +505,7 @@ export function SortingVisualizer() {
         }
     }
 
+    //Updates number of elements in array
     const updateNumElements = (e) => {
         const new_len = e.target.value;
         if(new_len <= MAX_LEN && new_len !== numElements) {
@@ -444,10 +514,12 @@ export function SortingVisualizer() {
         }
     }
 
+    //Updates speed of next animation
     const updateAnimationSpeed = (new_speed) => {
         setAnimationSpeed(new_speed);
     }
 
+    //Updates colour of done button to match selected speed colour
     const toggleDoneButtonColour = (hover, colour) => {
         if (hover) {
             setDoneButtonColour(colour);
@@ -457,9 +529,10 @@ export function SortingVisualizer() {
         }
     }
 
+    //Handles ressetting the colour of array and selected algorithm. Also resets array order if needed
     const handleResetArray = (set=false) => {
         if(!set){
-            setArr(unsortedArr); 
+            setArr(unsortedArr); //Check 
         }
         setSelectedAlgorithm("");
         const arrayBars = document.getElementsByClassName('array-bar');
@@ -469,6 +542,7 @@ export function SortingVisualizer() {
         })
     }
 
+    //Alert to know if testing passed or failed
     const handleTestSorting = () => {
         //add loading screen
         if(testSorting()){
@@ -479,16 +553,24 @@ export function SortingVisualizer() {
         }
     }
 
+    //Styling to make buttons unclickable during animations
     const buttonsClickable = curAnimation || unsortedArr !== arr ? "unclickable" : "";
     const resetControls = curAnimation ? "unclickable" : "";
-    const selectedButtonStyle = {color:"white",backgroundColor:"#4caf50", pointerEvents:"none"};
+    const selectedButtonStyle = {color:"white", backgroundColor:"#4caf50", pointerEvents:"none"};
 
     return (
         <div>
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"></link>
             <div className = 'array-container'>
                 {
-                arr.map((value, i) => (<div className='array-bar' key = {i} style={{backgroundColor: PRIMARY_COLOR, height:`${value/10}%`}}></div>))
+                    arr.map((value, i) => (<div className='array-bar' 
+                                                key = {i} 
+                                                style={{
+                                                    backgroundColor: PRIMARY_COLOR, 
+                                                    height:`${value/10}%`, 
+                                                    "--numBars":`${displayedNumElements}`
+                                                }}
+                                            ></div>))
                 }
             </div>
             <br></br>
@@ -602,7 +684,7 @@ export function SortingVisualizer() {
                             <div className="popup-row">
                                 <div className="popup-column column-double">
                                     <div className="slidecontainer">
-                                        <input type="range" min="15" max="1500" value={numElements} className="slider" id="myRange" onChange={(e) => updateNumElements(e)}/>
+                                        <input type="range" min={MIN_LEN} max={MAX_LEN} value={numElements} className="slider" id="myRange" onChange={(e) => updateNumElements(e)}/>
                                     </div>
                                 </div>
                                 <div className="popup-column column-double">
@@ -610,8 +692,8 @@ export function SortingVisualizer() {
                                         Value: 
                                         <input  className="numElements-input" 
                                                 type="number" 
-                                                min="15" 
-                                                max="1500" 
+                                                min={MIN_LEN} 
+                                                max={MAX_LEN} 
                                                 style={{color:numElementsColour}} 
                                                 value={numElements} 
                                                 onChange={(e)=>updateNumElements(e)}
@@ -621,10 +703,10 @@ export function SortingVisualizer() {
                             </div>
                             <div className="popup-row">
                                 <div className="popup-column">
-                                    <div>150</div>
+                                    <div>{MIN_LEN}</div>
                                 </div>
                                 <div className="popup-column fifty">
-                                    <div>1500</div>
+                                    <div>{MAX_LEN}</div>
                                 </div>
                             </div>
                             <br></br>
@@ -639,7 +721,7 @@ export function SortingVisualizer() {
                             </div>
                     </div>}
             />}
-            {/*progress >= 0 && progress < 1000 && <ProgressBar progress={progress}/>*/}
+            {progress > 0 && progress <= 100 && <ProgressBar progress={progress}/>}
         </div>
     );
 }
